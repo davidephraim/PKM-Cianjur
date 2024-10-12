@@ -1,79 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'api_service.dart';
-
-// void main() {
-//   runApp(ExpenseMonitoringApp());
-// }
-
-// class ExpenseMonitoringApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Expense Monitoring',
-//       home: IncomeScreen(),
-//     );
-//   }
-// }
-
-// // Income Screen
-// class IncomeScreen extends StatefulWidget {
-//   @override
-//   _IncomeScreenState createState() => _IncomeScreenState();
-// }
-
-// class _IncomeScreenState extends State<IncomeScreen> {
-//   final ApiService apiService = ApiService();
-//   late Future<List<dynamic>> incomeData;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     incomeData = apiService.fetchIncome();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Income Data'),
-//       ),
-//       body: FutureBuilder<List<dynamic>>(
-//         future: incomeData,
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.waiting) {
-//             return Center(child: CircularProgressIndicator());
-//           } else if (snapshot.hasError) {
-//             return Center(child: Text('Error: ${snapshot.error}'));
-//           } else if (snapshot.hasData) {
-//             final incomeList = snapshot.data!;
-//             return ListView.builder(
-//               itemCount: incomeList.length,
-//               itemBuilder: (context, index) {
-//                 final income = incomeList[index];
-//               return ListTile(
-//                 title: Text('Product: ${income.nameProducts}'),
-//                 subtitle: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text('Date: ${income.dateTime}'),
-//                     Text('Quantity: ${income.qtyProducts}'),
-//                     Text('Revenue: ${income.revenue.toStringAsFixed(2)}'),
-//                     Text('Transaction ID: ${income.transactionId}'),
-//                     Text('User ID: ${income.userId}'),
-//                   ],
-//                 ),
-//               );
-//               },
-//             );
-//           } else {
-//             return Center(child: Text('No data available'));
-//           }
-//         },
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 
@@ -132,41 +56,78 @@ class _ExpenseMonitoringAppState extends State<ExpenseMonitoringApp> {
   }
 }
 
-// Income Screen
-class IncomeScreen extends StatefulWidget {
+// Expense Screen
+class ExpenseScreen extends StatefulWidget {
   @override
-  _IncomeScreenState createState() => _IncomeScreenState();
+  _ExpenseScreenState createState() => _ExpenseScreenState();
 }
 
-class _IncomeScreenState extends State<IncomeScreen> {
+class _ExpenseScreenState extends State<ExpenseScreen> {
   final ApiService apiService = ApiService();
-  late Future<List<dynamic>> incomeData;
+  List<Map<String, dynamic>> expenseData = [];
+  List<int> quantities = [];
 
   @override
   void initState() {
     super.initState();
-    incomeData = apiService.fetchIncome();
+    // Dummy data for testing
+    expenseData = [
+      {
+        'date': '2024-10-09',
+        'transaction_id': 'EXP123',
+        'product_name': 'Product A',
+        'expense_amount': 10,
+        'revenue': 500,
+        'user_id': 'User1'
+      },
+      {
+        'date': '2024-10-09',
+        'transaction_id': 'EXP124',
+        'product_name': 'Product B',
+        'expense_amount': 5,
+        'revenue': 300,
+        'user_id': 'User2'
+      },
+    ];
+
+    quantities = List<int>.generate(expenseData.length, (index) => expenseData[index]['expense_amount']);
+  }
+
+  void _incrementQuantity(int index) {
+    setState(() {
+      quantities[index]++;
+    });
+  }
+
+  void _decrementQuantity(int index) {
+    setState(() {
+      if (quantities[index] > 0) {
+        quantities[index]--;
+      }
+    });
+  }
+
+  Future<void> _saveData(int index) async {
+    final productId = expenseData[index]['transaction_id'];
+    final newQuantity = quantities[index];
+
+    await apiService.updateExpenseAmount(productId, newQuantity);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Saved ${expenseData[index]['product_name']} with quantity $newQuantity')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Income Data'),
+        title: Text('Expense Data'),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: incomeData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final incomeList = snapshot.data!;
-            // Skip the first element (header)
-            final filteredIncomeList = incomeList.skip(1).toList();
-
-            return SingleChildScrollView(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columns: [
@@ -176,93 +137,170 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   DataColumn(label: Text('Quantity')),
                   DataColumn(label: Text('Revenue')),
                   DataColumn(label: Text('User ID')),
+                  DataColumn(label: Text('Actions')),
                 ],
-                rows: filteredIncomeList.map((income) {
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(income[0].toString())),
-                      DataCell(Text(income[1].toString())),
-                      DataCell(Text(income[2].toString())),
-                      DataCell(Text(income[3].toString())),
-                      DataCell(Text(income[4].toString())),
-                      DataCell(Text(income[5].toString())),
-                    ],
-                  );
-                }).toList(),
+                rows: List<DataRow>.generate(
+                  expenseData.length,
+                  (index) {
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(expenseData[index]['date'])),
+                        DataCell(Text(expenseData[index]['transaction_id'])),
+                        DataCell(Text(expenseData[index]['product_name'])),
+                        DataCell(Text(quantities[index].toString())),
+                        DataCell(Text(expenseData[index]['revenue'].toString())),
+                        DataCell(Text(expenseData[index]['user_id'])),
+                        DataCell(
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.remove),
+                                onPressed: () => _decrementQuantity(index),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () => _incrementQuantity(index),
+                              ),
+                              TextButton(
+                                onPressed: () => _saveData(index),
+                                child: Text('Save'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            );
-          } else {
-            return Center(child: Text('No data available'));
-          }
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// Expense Screen
-class ExpenseScreen extends StatefulWidget {
+// Income Screen
+class IncomeScreen extends StatefulWidget {
   @override
-  _ExpenseScreenState createState() => _ExpenseScreenState();
+  _IncomeScreenState createState() => _IncomeScreenState();
 }
 
-class _ExpenseScreenState extends State<ExpenseScreen> {
+class _IncomeScreenState extends State<IncomeScreen> {
   final ApiService apiService = ApiService();
-  late Future<List<dynamic>> expenseData;
+  List<Map<String, dynamic>> incomeData = [];
+  List<int> quantities = [];
 
   @override
   void initState() {
     super.initState();
-    expenseData = apiService.fetchExpense(); // Fetching expense data
+    // Dummy data for testing
+    incomeData = [
+      {
+        'date': '2024-10-09',
+        'transaction_id': 'TX123',
+        'product_name': 'Product A',
+        'quantity': 10,
+        'revenue': 500,
+        'user_id': 'User1'
+      },
+      {
+        'date': '2024-10-09',
+        'transaction_id': 'TX124',
+        'product_name': 'Product B',
+        'quantity': 5,
+        'revenue': 300,
+        'user_id': 'User2'
+      },
+    ];
+
+    quantities = List<int>.generate(incomeData.length, (index) => incomeData[index]['quantity']);
+  }
+
+  void _incrementQuantity(int index) {
+    setState(() {
+      quantities[index]++;
+    });
+  }
+
+  void _decrementQuantity(int index) {
+    setState(() {
+      if (quantities[index] > 0) {
+        quantities[index]--;
+      }
+    });
+  }
+
+  Future<void> _saveData(int index) async {
+    final productId = incomeData[index]['transaction_id'];
+    final newQuantity = quantities[index];
+
+    await apiService.updateIncomeQuantity(productId, newQuantity);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Saved ${incomeData[index]['product_name']} with quantity $newQuantity')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Expense Data'),
+        title: Text('Income Data'),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: expenseData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final expenseList = snapshot.data!;
-            // Skip the first element (header)
-            final filteredExpenseList = expenseList.skip(1).toList();
-
-            return SingleChildScrollView(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columns: [
                   DataColumn(label: Text('Date')),
                   DataColumn(label: Text('Transaction ID')),
                   DataColumn(label: Text('Product Name')),
-                  DataColumn(label: Text('Expense Amount')),
+                  DataColumn(label: Text('Quantity')),
                   DataColumn(label: Text('Revenue')),
                   DataColumn(label: Text('User ID')),
+                  DataColumn(label: Text('Actions')),
                 ],
-                rows: filteredExpenseList.map((expense) {
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(expense[0].toString())),
-                      DataCell(Text(expense[1].toString())),
-                      DataCell(Text(expense[2].toString())),
-                      DataCell(Text(expense[3].toString())), // Expense Amount
-                      DataCell(Text(expense[4].toString())), // Revenue
-                      DataCell(Text(expense[5].toString())),
-                    ],
-                  );
-                }).toList(),
+                rows: List<DataRow>.generate(
+                  incomeData.length,
+                  (index) {
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(incomeData[index]['date'])),
+                        DataCell(Text(incomeData[index]['transaction_id'])),
+                        DataCell(Text(incomeData[index]['product_name'])),
+                        DataCell(Text(quantities[index].toString())),
+                        DataCell(Text(incomeData[index]['revenue'].toString())),
+                        DataCell(Text(incomeData[index]['user_id'])),
+                        DataCell(
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.remove),
+                                onPressed: () => _decrementQuantity(index),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () => _incrementQuantity(index),
+                              ),
+                              TextButton(
+                                onPressed: () => _saveData(index),
+                                child: Text('Save'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            );
-          } else {
-            return Center(child: Text('No data available'));
-          }
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
