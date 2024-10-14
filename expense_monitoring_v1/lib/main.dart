@@ -73,24 +73,17 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     // Dummy data for testing
     expenseData = [
       {
-        'date': '2024-10-09',
-        'transaction_id': 'EXP123',
-        'product_name': 'Product A',
-        'expense_amount': 10,
-        'revenue': 500,
-        'user_id': 'User1'
-      },
-      {
-        'date': '2024-10-09',
-        'transaction_id': 'EXP124',
-        'product_name': 'Product B',
-        'expense_amount': 5,
-        'revenue': 300,
-        'user_id': 'User2'
+        'action': "addExpense",
+        'dateTime':"2024-10-09",
+        'transactionsId':"1",
+        'productsName':"1",
+        'qtyProducts':"1",
+        'expenseAmounts':11,
+        'userId':"1",
       },
     ];
 
-    quantities = List<int>.generate(expenseData.length, (index) => expenseData[index]['expense_amount']);
+    quantities = List<int>.generate(expenseData.length, (index) => expenseData[index]['expenseAmounts']);
   }
 
   void _incrementQuantity(int index) {
@@ -107,16 +100,38 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     });
   }
 
-  Future<void> _saveData(int index) async {
-    final productId = expenseData[index]['transaction_id'];
+Future<void> _saveData(int index) async {
+    final ApiService apiService = ApiService();
+    final expense = expenseData[index];
     final newQuantity = quantities[index];
 
-    await apiService.updateExpenseAmount(productId, newQuantity);
+    // Kirim data ke API Google Apps Script
+    await apiService.addExpense(
+      action: expense['action'],
+      dateTime: expense['dateTime'],
+      transactionId: expense['transactionsId'],
+      productsName: expense['productsName'],
+      qtyProducts: expense['qtyProducts'],
+      expenseAmounts: newQuantity,
+      userId: expense['userId'],
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved ${expenseData[index]['product_name']} with quantity $newQuantity')),
+      SnackBar(content: Text('Saved ${expense['productsName']} with quantity $newQuantity')),
     );
   }
+
+  // Future<void> _saveData(int index) async {
+  //   final productId = expenseData[index]['transactionsId'];
+  //   final newQuantity = quantities[index];
+
+  //   await apiService.updateExpenseAmount(productId, newQuantity);
+  //   await apiService.addExpense(expenseData[0]['dateTime'], expenseData[0]['transactionsId'], expenseData[0]['productsName'], expenseData[0]['qtyProducts'], expenseData[0]['expenseAmounts'], expenseData[0]['userId']);
+
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(content: Text('Saved ${expenseData[index]['productsName']} with quantity $newQuantity')),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +150,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   DataColumn(label: Text('Transaction ID')),
                   DataColumn(label: Text('Product Name')),
                   DataColumn(label: Text('Quantity')),
-                  DataColumn(label: Text('Revenue')),
+                  DataColumn(label: Text('Expense Amount')),
                   DataColumn(label: Text('User ID')),
                   DataColumn(label: Text('Actions')),
                 ],
@@ -144,12 +159,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   (index) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(expenseData[index]['date'])),
-                        DataCell(Text(expenseData[index]['transaction_id'])),
-                        DataCell(Text(expenseData[index]['product_name'])),
+                        DataCell(Text(expenseData[index]['dateTime'].toString())),
+                        DataCell(Text(expenseData[index]['transactionsId'].toString())),
+                        DataCell(Text(expenseData[index]['productsName'].toString())),
                         DataCell(Text(quantities[index].toString())),
-                        DataCell(Text(expenseData[index]['revenue'].toString())),
-                        DataCell(Text(expenseData[index]['user_id'])),
+                        // DataCell(Text(expenseData[index]['qtyProducts'].toString())),
+                        DataCell(Text(expenseData[index]['expenseAmounts'].toString())),
+                        DataCell(Text(expenseData[index]['userId'].toString())),
                         DataCell(
                           Row(
                             children: [

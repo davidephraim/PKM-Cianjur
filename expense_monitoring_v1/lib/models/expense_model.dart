@@ -31,27 +31,37 @@ class Expense {
   final String dateTime;
   final String transactionId;
   final String productsName;
-  final int expenseAmounts;
-  final double revenue;
-  final int user_id;
+  final String qtyProducts;
+  final int expenseAmount;
+  final String userId;
 
   Expense({
     required this.dateTime,
     required this.transactionId,
     required this.productsName,
-    required this.expenseAmounts,
-    required this.revenue,
-    required this.user_id,
+    required this.qtyProducts,
+    required this.expenseAmount,
+    required this.userId,
   });
 
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
-      dateTime: json[0],
-      transactionId: json[1],
-      productsName: json[2],
-      expenseAmounts: int.parse(json[3]),
-      revenue: double.parse(json[4]),
-      user_id: int.parse(json[5]),
+      dateTime: json['dateTime'],
+      transactionId: json['transactionsId'],
+      productsName: json['productsName'],
+      qtyProducts: json['qtyProducts'],
+      expenseAmount: int.parse(json['expenseAmounts']),
+      userId: json['userId']
     );
   }
+  // factory Expense.fromJson(Map<String, dynamic> json) {
+  //   return Expense(
+  //     dateTime: json[0],
+  //     transactionId: json[1],
+  //     productsName: json[2],
+  //     qtyProducts: int.parse(json[3]),
+  //     expenseAmount: double.parse(json[4]),
+  //     userId: int.parse(json[5]),
+  //   );
+  // }
 }

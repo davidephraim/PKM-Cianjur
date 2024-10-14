@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbw2gpq7vys0ylcTobXVag9MUFwXqqVBozp_tMje2aQtxUQL9VVQhzpYbGwKzhj51BWcTA/exec';
+  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbyYtTWO-ia8Uvd7KBtpLbE6KC81Tfp6WtWkK6HtA11f02uIo51xnb9jNa8Si8VHnwprsg/exec';
   
   static const String getIncomeAction = 'getIncome';
   static const String getExpenseAction = 'getExpense';
@@ -87,16 +87,51 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> addExpense(String expenseId, String expenseName, String amount) async {
-    return await _postRequest(
-      addExpenseAction,
-      {
-        'expenseId': expenseId,
-        'expenseName': expenseName,
-        'amount': amount,
-      },
-    );
+  // Future<Map<String, dynamic>> addExpense(String action, String dateTime, String transactionId, String productName, String qtyProducts, String expenseAmounts, String userId) async {
+  //   return await _postRequest(
+  //     addExpenseAction,
+  //     {
+  //       'action': action,
+  //       'dateTime':dateTime,
+  //       'transactionsId':transactionId,
+  //       'productsName':productName,
+  //       'qtyProducts':qtyProducts,
+  //       'expenseAmounts':expenseAmounts,
+  //       'userId':userId,
+  //     },
+  //   );
+  // }
+
+  Future<void> addExpense({
+  required String action,
+  required String dateTime,
+  required String transactionId,
+  required String qtyProducts,
+  required int expenseAmounts,
+  required String userId,
+  required String productsName,
+}) async {
+  // Convert int to String
+  final Uri uri = Uri.parse(baseUrl).replace(queryParameters: {
+    'action': action,
+    'dateTime': dateTime,
+    'transactionsId': transactionId,
+    'qtyProducts': qtyProducts,
+    'expenseAmounts': expenseAmounts.toString(),  // Convert to String
+    'userId': userId,
+    'productsName': productsName,
+  });
+
+  final response = await http.post(uri);
+
+  if (response.statusCode == 200) {
+    print('Expense berhasil ditambahkan');
+    print('Response body: ${response.body}');
+  } else {
+    print('Gagal menambahkan expense. Status code: ${response.statusCode}');
   }
+}
+
 
   Future<Map<String, dynamic>> updateExpenseAmount(String expenseId, int newAmount) async {
     return await _postRequest(
