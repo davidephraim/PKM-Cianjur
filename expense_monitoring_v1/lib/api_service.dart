@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbyYtTWO-ia8Uvd7KBtpLbE6KC81Tfp6WtWkK6HtA11f02uIo51xnb9jNa8Si8VHnwprsg/exec';
+  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbxHZVtcUCfpd3R1CliIR2358fq0RhVisnJPYPsPBkCajtnRx79mFMExvc1kvego6gYTEg/exec';
   
   static const String getIncomeAction = 'getIncome';
   static const String getExpenseAction = 'getExpense';
@@ -15,6 +15,7 @@ class ApiService {
   static const String addExpenseAction = 'addExpense';
   static const String updateExpenseAmountAction = 'updateExpenseAmount';
   static const String updateIncomeQuantityAction = 'updateIncomeQuantity';
+  static const String getExpenseTypesAction = 'getExpenseTypes';
 
   Future<List<dynamic>> fetchIncome() async {
     final response = await http.get(Uri.parse('$baseUrl?action=$getIncomeAction'));
@@ -43,6 +44,11 @@ class ApiService {
 
   Future<List<dynamic>> fetchDashboard() async {
     final response = await http.get(Uri.parse('$baseUrl?action=$getDashboardAction'));
+    return _handleResponse(response);
+  }
+  
+  Future<List<dynamic>> fetchExpenseTypes() async {
+    final response = await http.get(Uri.parse('$baseUrl?action=$getExpenseTypesAction'));
     return _handleResponse(response);
   }
 
@@ -75,64 +81,75 @@ class ApiService {
       return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> addIncome(String productId, String productName, String quantity, String price) async {
-    return await _postRequest(
-      addIncomeAction,
-      {
-        'productId': productId,
-        'productName': productName,
-        'quantity': quantity,
-        'price': price,
-      },
-    );
+// ADD INCOME [START]
+    Future<void> addIncome({
+    required String action,
+    required String dateTime,
+    required String transactionId,
+    required String productsName,
+    required String qtyProducts,
+    required int revenue,
+    required String userId,
+  }) async {
+    final String dateTime = DateTime.now().toIso8601String();
+
+    // Convert int to String
+    final Uri uri = Uri.parse(baseUrl).replace(queryParameters: {
+      'action': action,
+      'dateTime': dateTime,
+      'transactionsId': transactionId,
+      'productsName': productsName,
+      'qtyProducts': qtyProducts,
+      'revenue': revenue.toString(),  // Convert to String
+      'userId': userId,
+    });
+
+    final response = await http.post(uri);
+
+    if (response.statusCode == 200) {
+      print('Expense berhasil ditambahkan');
+      print('Response body: ${response.body}');
+    } else {
+      print('Gagal menambahkan expense. Status code: ${response.statusCode}');
+    }
   }
+// ADD INCOME [END]
 
-  // Future<Map<String, dynamic>> addExpense(String action, String dateTime, String transactionId, String productName, String qtyProducts, String expenseAmounts, String userId) async {
-  //   return await _postRequest(
-  //     addExpenseAction,
-  //     {
-  //       'action': action,
-  //       'dateTime':dateTime,
-  //       'transactionsId':transactionId,
-  //       'productsName':productName,
-  //       'qtyProducts':qtyProducts,
-  //       'expenseAmounts':expenseAmounts,
-  //       'userId':userId,
-  //     },
-  //   );
-  // }
+// ADD EXPENSE [START]
+    Future<void> addExpense({
+    required String action,
+    required String dateTime,
+    required String transactionId,
+    required String expenseName,
+    required String qtyProducts,
+    required int expenseAmounts,
+    required String userId,
+  }) async {
+    final String dateTime = DateTime.now().toIso8601String();
 
-  Future<void> addExpense({
-  required String action,
-  required String dateTime,
-  required String transactionId,
-  required String qtyProducts,
-  required int expenseAmounts,
-  required String userId,
-  required String productsName,
-}) async {
-  // Convert int to String
-  final Uri uri = Uri.parse(baseUrl).replace(queryParameters: {
-    'action': action,
-    'dateTime': dateTime,
-    'transactionsId': transactionId,
-    'qtyProducts': qtyProducts,
-    'expenseAmounts': expenseAmounts.toString(),  // Convert to String
-    'userId': userId,
-    'productsName': productsName,
-  });
+    // Convert int to String
+    final Uri uri = Uri.parse(baseUrl).replace(queryParameters: {
+      'action': action,
+      'dateTime': dateTime,
+      'transactionsId': transactionId,
+      'expenseName': expenseName,
+      'qtyProducts': qtyProducts,
+      'expenseAmounts': expenseAmounts.toString(),
+      'userId': userId,
+    });
 
-  final response = await http.post(uri);
+    final response = await http.post(uri);
 
-  if (response.statusCode == 200) {
-    print('Expense berhasil ditambahkan');
-    print('Response body: ${response.body}');
-  } else {
-    print('Gagal menambahkan expense. Status code: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      print('Expense berhasil ditambahkan');
+      print('Response body: ${response.body}');
+    } else {
+      print('Gagal menambahkan expense. Status code: ${response.statusCode}');
+    }
   }
-}
+// ADD EXPENSE [END]
 
-
+// UPDATE EXPENSE AMOUNT [START]
   Future<Map<String, dynamic>> updateExpenseAmount(String expenseId, int newAmount) async {
     return await _postRequest(
       updateExpenseAmountAction,
@@ -142,7 +159,9 @@ class ApiService {
       },
     );
   }
+// UPDATE EXPENSE AMOUNT [END]
 
+// UPDATE INCOME QUANTITY [START]
   Future<Map<String, dynamic>> updateIncomeQuantity(String productId, int quantity) async {
     return await _postRequest(
       updateIncomeQuantityAction,
@@ -152,7 +171,9 @@ class ApiService {
       },
     );
   }
+// UPDATE INCOME QUANTITY [END]
 
+// POST REQUEST [START]
   Future<Map<String, dynamic>> _postRequest(String action, Map<String, String> body) async {
     final response = await http.post(
       Uri.parse('$baseUrl?action=$action'),
@@ -161,24 +182,26 @@ class ApiService {
     );
     return _handleResponse(response);
   }
+// POST REQUEST [END]
 
+// HANDLE RESPONSE [START]
   dynamic _handleResponse(http.Response response) {
-  if (response.statusCode == 200) {
-    try {
-      final decodedData = jsonDecode(response.body);
-      if (decodedData is Map || decodedData is List) {
-        return decodedData;
-      } else {
-        throw Exception('Unexpected response format');
+    if (response.statusCode == 200) {
+      try {
+        final decodedData = jsonDecode(response.body);
+        if (decodedData is Map || decodedData is List) {
+          return decodedData;
+        } else {
+          throw Exception('Unexpected response format');
+        }
+      } catch (e) {
+        print('Error decoding response: $e');
+        throw Exception('Error decoding response: $e');
       }
-    } catch (e) {
-      print('Error decoding response: $e');
-      throw Exception('Error decoding response: $e');
+    } else {
+      print('Error ${response.statusCode}: ${response.reasonPhrase}');
+      throw Exception('Failed to load data: ${response.statusCode} - ${response.reasonPhrase}');
     }
-  } else {
-    print('Error ${response.statusCode}: ${response.reasonPhrase}');
-    throw Exception('Failed to load data: ${response.statusCode} - ${response.reasonPhrase}');
   }
-}
-
+// HANDLE RESPONSE [END]
 }

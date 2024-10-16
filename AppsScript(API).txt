@@ -1,0 +1,151 @@
+function addIncome(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Income');
+  var result = {"status":"SUCCESS"};
+
+  try{
+    const dateTime = e.parameter.dateTime;
+    const transactionsId = e.parameter.transactionsId;
+    const productsName = e.parameter.productsName;
+    const qtyProducts = e.parameter.qtyProducts;
+    const revenue = e.parameter.revenue;
+    const userId = e.parameter.userId;
+    
+    data = sheet.appendRow([dateTime, transactionsId, productsName, qtyProducts, revenue, userId]);
+  }
+  catch(exec){
+    result = {"status":"FAILED", "msg":exec};
+  }
+  return ContentService
+  .createTextOutput(JSON.stringify(result))  
+  .setMimeType(ContentService.MimeType.JSON);
+}
+
+function addExpense(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Expense');
+  var result = {"status":"SUCCESS"};
+
+  try{
+    const dateTime = e.parameter.dateTime;
+    const transactionsId = e.parameter.transactionsId;
+    const productsName = e.parameter.productsName;
+    const qtyProducts = e.parameter.qtyProducts;
+    const expenseAmounts = e.parameter.expenseAmounts;
+    const userId = e.parameter.userId;
+    
+    data = sheet.appendRow([dateTime, transactionsId, productsName, qtyProducts, expenseAmounts, userId]);
+  }
+  catch(exec){
+    result = {"status":"FAILED", "msg":exec};
+  }
+  return ContentService
+  .createTextOutput(JSON.stringify(result))  
+  .setMimeType(ContentService.MimeType.JSON);
+}
+
+function addProduct(e){
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products');
+  var result = {"status":"SUCCESS"};
+
+  try{
+    const dateTime = e.parameter.dateTime;
+    const productsId = e.parameter.productsId;
+    const productsName = e.parameter.productsName;
+    const productsPrice = e.parameter.productsPrice;
+    const userId = e.parameter.userId;
+    
+    data = sheet.appendRow([dateTime, productsId, productsName, productsPrice, userId]);
+  }
+  catch(exec){
+    result = {"status":"FAILED", "msg":exec};
+  }
+  return ContentService
+  .createTextOutput(JSON.stringify(result))  
+  .setMimeType(ContentService.MimeType.JSON);
+}
+
+// POST
+function doPost(e) {
+  const action = e.parameter.action;
+
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  
+  switch(action) {
+    case 'registerUser':
+      return registerUser(e);
+    case 'addIncome':
+      return addIncome(e);
+    case 'addExpense':
+      return addExpense(e);
+    case 'addProduct':
+      return addProduct(e);
+    default:
+      return output.setContent(JSON.stringify({ error: "Invalid action" }));
+  }
+}
+
+// GET
+function doGet(e) {
+
+  const action = e.parameter.action;
+  
+  switch(action) {
+    case 'getDashboard':
+      return getDashboard();
+    case 'getIncome':
+      return getIncome();
+    case 'getExpense':
+      return getExpense();
+    case 'getUsers':
+      return getUsers();
+    case 'getProducts':
+      return getProducts();
+    case 'getServices':
+      return getServices();
+    default:
+      return ContentService.createTextOutput("Invalid action");
+  }
+}
+
+function getDashboard() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Dashboard');
+  const data = sheet.getDataRange().getValues();
+  return createResponse(data);
+}
+
+function getIncome() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Income');
+  const data = sheet.getDataRange().getValues();
+  return createResponse(data);
+}
+
+function getExpense() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Expense');
+  const data = sheet.getDataRange().getValues();
+  return createResponse(data);
+}
+
+function getUsers() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  const data = sheet.getDataRange().getValues();
+  return createResponse(data);
+}
+
+function getProducts() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products');
+  const data = sheet.getDataRange().getValues();
+  return createResponse(data);
+}
+
+function getServices() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Services');
+  const data = sheet.getDataRange().getValues();
+  return createResponse(data);
+}
+
+function createResponse(data) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setContent(JSON.stringify(data));
+  return output;
+}

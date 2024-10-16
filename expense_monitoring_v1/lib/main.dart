@@ -11,7 +11,7 @@ class ExpenseMonitoringApp extends StatefulWidget {
 }
 
 class _ExpenseMonitoringAppState extends State<ExpenseMonitoringApp> {
-  int _selectedIndex = 1; // Start with Dashboard page
+  int _selectedIndex = 1;
 
   final List<Widget> _pages = [
     ExpenseScreen(),
@@ -56,7 +56,7 @@ class _ExpenseMonitoringAppState extends State<ExpenseMonitoringApp> {
   }
 }
 
-// Expense Screen
+// EXPENSE SCREEN [START]
 class ExpenseScreen extends StatefulWidget {
   @override
   _ExpenseScreenState createState() => _ExpenseScreenState();
@@ -64,140 +64,208 @@ class ExpenseScreen extends StatefulWidget {
 
 class _ExpenseScreenState extends State<ExpenseScreen> {
   final ApiService apiService = ApiService();
-  List<Map<String, dynamic>> expenseData = [];
-  List<int> quantities = [];
+  List<Map<String, dynamic>> expenseHistory = [];
+  List<String> expenseTypes = [];
+  String selectedExpenseType = '';
+  int quantity = 1;
+  TextEditingController priceController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Dummy data for testing
-    expenseData = [
-      {
-        'action': "addExpense",
-        'dateTime':"2024-10-09",
-        'transactionsId':"1",
-        'productsName':"1",
-        'qtyProducts':"1",
-        'expenseAmounts':11,
-        'userId':"1",
-      },
-    ];
-
-    quantities = List<int>.generate(expenseData.length, (index) => expenseData[index]['expenseAmounts']);
+    _fetchExpenseTypes();
   }
 
-  void _incrementQuantity(int index) {
+  Future<void> _fetchExpenseTypes() async {
+    final expenseTypesData = await apiService.fetchExpenseTypes();
     setState(() {
-      quantities[index]++;
+      // Remove the first item (header)
+      expenseTypes = List<String>.from(expenseTypesData)..removeAt(0);
+      selectedExpenseType = expenseTypes.isNotEmpty ? expenseTypes.first : '';
     });
   }
 
-  void _decrementQuantity(int index) {
+  void _incrementQuantity() {
     setState(() {
-      if (quantities[index] > 0) {
-        quantities[index]--;
+      quantity++;
+    });
+  }
+
+  void _decrementQuantity() {
+    setState(() {
+      if (quantity > 0) {
+        quantity--;
       }
     });
   }
 
-Future<void> _saveData(int index) async {
-    final ApiService apiService = ApiService();
-    final expense = expenseData[index];
-    final newQuantity = quantities[index];
+  Future<void> _saveExpense() async {
+    final expenseAmount = int.tryParse(priceController.text) ?? 0;
 
-    // Kirim data ke API Google Apps Script
+    // Ensure price is not empty and quantity is not 0
+    if (expenseAmount == 0 || quantity == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid price and quantity')),
+      );
+      return;
+    }
+
+    // Post the expense data
     await apiService.addExpense(
-      action: expense['action'],
-      dateTime: expense['dateTime'],
-      transactionId: expense['transactionsId'],
-      productsName: expense['productsName'],
-      qtyProducts: expense['qtyProducts'],
-      expenseAmounts: newQuantity,
-      userId: expense['userId'],
+      action: "addExpense",
+      dateTime: DateTime.now().toIso8601String(),
+      transactionId: DateTime.now().millisecondsSinceEpoch.toString(),
+      expenseName: selectedExpenseType,
+      qtyProducts: quantity.toString(),
+      expenseAmounts: expenseAmount,
+      userId: "1",
     );
+
+    // Add the expense to history
+    setState(() {
+      expenseHistory.insert(0, {
+        'expenseName': selectedExpenseType,
+        'expenseAmounts': expenseAmount,
+        'quantity': quantity,
+      });
+
+      // Limit the history to the latest 5 records
+      if (expenseHistory.length > 5) {
+        expenseHistory = expenseHistory.sublist(0, 5);
+      }
+
+      // Clear input fields after saving
+      priceController.clear();
+      quantity = 1;
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved ${expense['productsName']} with quantity $newQuantity')),
+      SnackBar(content: Text('Expense saved successfully!')),
     );
   }
-
-  // Future<void> _saveData(int index) async {
-  //   final productId = expenseData[index]['transactionsId'];
-  //   final newQuantity = quantities[index];
-
-  //   await apiService.updateExpenseAmount(productId, newQuantity);
-  //   await apiService.addExpense(expenseData[0]['dateTime'], expenseData[0]['transactionsId'], expenseData[0]['productsName'], expenseData[0]['qtyProducts'], expenseData[0]['expenseAmounts'], expenseData[0]['userId']);
-
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(content: Text('Saved ${expenseData[index]['productsName']} with quantity $newQuantity')),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Expense Data'),
+        title: Text('Expense Input'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: [
-                  DataColumn(label: Text('Date')),
-                  DataColumn(label: Text('Transaction ID')),
-                  DataColumn(label: Text('Product Name')),
-                  DataColumn(label: Text('Quantity')),
-                  DataColumn(label: Text('Expense Amount')),
-                  DataColumn(label: Text('User ID')),
-                  DataColumn(label: Text('Actions')),
-                ],
-                rows: List<DataRow>.generate(
-                  expenseData.length,
-                  (index) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(expenseData[index]['dateTime'].toString())),
-                        DataCell(Text(expenseData[index]['transactionsId'].toString())),
-                        DataCell(Text(expenseData[index]['productsName'].toString())),
-                        DataCell(Text(quantities[index].toString())),
-                        // DataCell(Text(expenseData[index]['qtyProducts'].toString())),
-                        DataCell(Text(expenseData[index]['expenseAmounts'].toString())),
-                        DataCell(Text(expenseData[index]['userId'].toString())),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.remove),
-                                onPressed: () => _decrementQuantity(index),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.add),
-                                onPressed: () => _incrementQuantity(index),
-                              ),
-                              TextButton(
-                                onPressed: () => _saveData(index),
-                                child: Text('Save'),
-                              ),
-                            ],
-                          ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // Expense Name Dropdown
+            Text('Expense Name', style: TextStyle(fontSize: 16)),
+            DropdownButton<String>(
+              isExpanded: true,
+              value: selectedExpenseType,
+              onChanged: (newValue) {
+                setState(() {
+                  selectedExpenseType = newValue!;
+                });
+              },
+              items: expenseTypes.map((expenseType) {
+                return DropdownMenuItem<String>(
+                  value: expenseType,
+                  child: Text(expenseType),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 16),
+
+            // Price Input
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Price', style: TextStyle(fontSize: 16)),
+                      TextField(
+                        controller: priceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'Enter price in Rp',
+                          prefixText: 'Rp ',
                         ),
-                      ],
-                    );
-                  },
+                      ),
+                    ],
+                  ),
                 ),
+
+                SizedBox(width: 16),
+
+                // Quantity and Save Button
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Quantity', style: TextStyle(fontSize: 16)),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.remove),
+                            onPressed: _decrementQuantity,
+                          ),
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                quantity.toString(),
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.add),
+                            onPressed: _incrementQuantity,
+                          ),
+                          SizedBox(width: 16),
+
+                          ElevatedButton(
+                            onPressed: _saveExpense,
+                            child: Text('Save'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 24),
+
+            // History Section
+            Text('History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Expanded(
+              child: ListView.builder(
+                itemCount: expenseHistory.length,
+                itemBuilder: (context, index) {
+                  final expense = expenseHistory[index];
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      title: Text(expense['expenseName']),
+                      subtitle: Text(
+                          'Price: Rp ${expense['expenseAmounts']}, Quantity: ${expense['quantity']}'),
+                    ),
+                  );
+                },
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
+// EXPENSE SCREEN [END]
 
-// Income Screen
+// INCOME SCREEN [START]
 class IncomeScreen extends StatefulWidget {
   @override
   _IncomeScreenState createState() => _IncomeScreenState();
@@ -214,24 +282,17 @@ class _IncomeScreenState extends State<IncomeScreen> {
     // Dummy data for testing
     incomeData = [
       {
-        'date': '2024-10-09',
-        'transaction_id': 'TX123',
-        'product_name': 'Product A',
-        'quantity': 10,
-        'revenue': 500,
-        'user_id': 'User1'
-      },
-      {
-        'date': '2024-10-09',
-        'transaction_id': 'TX124',
-        'product_name': 'Product B',
-        'quantity': 5,
-        'revenue': 300,
-        'user_id': 'User2'
+        'action': "addIncome",
+        'dateTime':"2024-10-09",
+        'transactionsId':"1",
+        'productsName':"1",
+        'qtyProducts':1,
+        'revenue':11,
+        'userId':"1",
       },
     ];
 
-    quantities = List<int>.generate(incomeData.length, (index) => incomeData[index]['quantity']);
+    quantities = List<int>.generate(incomeData.length, (index) => incomeData[index]['qtyProducts']);
   }
 
   void _incrementQuantity(int index) {
@@ -249,13 +310,23 @@ class _IncomeScreenState extends State<IncomeScreen> {
   }
 
   Future<void> _saveData(int index) async {
-    final productId = incomeData[index]['transaction_id'];
+    final ApiService apiService = ApiService();
+    final income = incomeData[index];
     final newQuantity = quantities[index];
 
-    await apiService.updateIncomeQuantity(productId, newQuantity);
+    // post data using API - Apps Script
+    await apiService.addIncome(
+      action: income['action'],
+      dateTime: income['dateTime'],
+      transactionId: income['transactionsId'],
+      productsName: income['productsName'],
+      qtyProducts: newQuantity.toString(),
+      revenue: income['revenue'],
+      userId: income['userId'],
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved ${incomeData[index]['product_name']} with quantity $newQuantity')),
+      SnackBar(content: Text('Saved ${income['productsName']} with quantity $newQuantity')),
     );
   }
 
@@ -285,12 +356,12 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   (index) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(incomeData[index]['date'])),
-                        DataCell(Text(incomeData[index]['transaction_id'])),
-                        DataCell(Text(incomeData[index]['product_name'])),
+                        DataCell(Text(incomeData[index]['dateTime'].toString())),
+                        DataCell(Text(incomeData[index]['transactionsId'].toString())),
+                        DataCell(Text(incomeData[index]['productsName'].toString())),
                         DataCell(Text(quantities[index].toString())),
                         DataCell(Text(incomeData[index]['revenue'].toString())),
-                        DataCell(Text(incomeData[index]['user_id'])),
+                        DataCell(Text(incomeData[index]['userId'].toString())),
                         DataCell(
                           Row(
                             children: [
@@ -321,8 +392,9 @@ class _IncomeScreenState extends State<IncomeScreen> {
     );
   }
 }
+// INCOME SCREEN [END]
 
-// Dashboard Screen (Displays Income Data)
+// DASHBOARD SCREEN [START]
 class DashboardScreen extends StatefulWidget {
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -331,11 +403,13 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final ApiService apiService = ApiService();
   late Future<List<dynamic>> incomeData;
+  late Future<List<dynamic>> expenseData;
 
   @override
   void initState() {
     super.initState();
     incomeData = apiService.fetchIncome();
+    expenseData = apiService.fetchExpense();
   }
 
   @override
@@ -389,3 +463,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+// DASHBOARD SCREEN [END]
