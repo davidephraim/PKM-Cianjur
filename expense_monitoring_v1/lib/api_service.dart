@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbxHZVtcUCfpd3R1CliIR2358fq0RhVisnJPYPsPBkCajtnRx79mFMExvc1kvego6gYTEg/exec';
+  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbz64gSc8TUky6CRiv6KRo629JQm-JFRwkxLqISxSrzo7S4aVS3n5ONPBRBbT9930cfFRQ/exec';
   
   static const String getIncomeAction = 'getIncome';
   static const String getExpenseAction = 'getExpense';
@@ -16,6 +16,7 @@ class ApiService {
   static const String updateExpenseAmountAction = 'updateExpenseAmount';
   static const String updateIncomeQuantityAction = 'updateIncomeQuantity';
   static const String getExpenseTypesAction = 'getExpenseTypes';
+  static const String getIncomeTypesAction = 'getIncomeTypes';
 
   Future<List<dynamic>> fetchIncome() async {
     final response = await http.get(Uri.parse('$baseUrl?action=$getIncomeAction'));
@@ -49,6 +50,11 @@ class ApiService {
   
   Future<List<dynamic>> fetchExpenseTypes() async {
     final response = await http.get(Uri.parse('$baseUrl?action=$getExpenseTypesAction'));
+    return _handleResponse(response);
+  }
+  
+  Future<List<dynamic>> fetchIncomeTypes() async {
+    final response = await http.get(Uri.parse('$baseUrl?action=$getIncomeTypesAction'));
     return _handleResponse(response);
   }
 
@@ -100,17 +106,17 @@ class ApiService {
       'transactionsId': transactionId,
       'productsName': productsName,
       'qtyProducts': qtyProducts,
-      'revenue': revenue.toString(),  // Convert to String
+      'revenue': revenue.toString(),
       'userId': userId,
     });
 
     final response = await http.post(uri);
 
     if (response.statusCode == 200) {
-      print('Expense berhasil ditambahkan');
+      print('Income added sucessfully');
       print('Response body: ${response.body}');
     } else {
-      print('Gagal menambahkan expense. Status code: ${response.statusCode}');
+      print('Failed add income. Status code: ${response.statusCode}');
     }
   }
 // ADD INCOME [END]
@@ -141,10 +147,10 @@ class ApiService {
     final response = await http.post(uri);
 
     if (response.statusCode == 200) {
-      print('Expense berhasil ditambahkan');
+      print('Expense added successfully');
       print('Response body: ${response.body}');
     } else {
-      print('Gagal menambahkan expense. Status code: ${response.statusCode}');
+      print('Failed add expense. Status code: ${response.statusCode}');
     }
   }
 // ADD EXPENSE [END]

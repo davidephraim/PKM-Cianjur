@@ -8,9 +8,11 @@ function addIncome(e) {
     const productsName = e.parameter.productsName;
     const qtyProducts = e.parameter.qtyProducts;
     const revenue = e.parameter.revenue;
+    const totalRavenue = qtyProducts * revenue;
+    const notes = e.parameter.notes;
     const userId = e.parameter.userId;
     
-    data = sheet.appendRow([dateTime, transactionsId, productsName, qtyProducts, revenue, userId]);
+    data = sheet.appendRow([dateTime, transactionsId, productsName, qtyProducts, revenue, totalRavenue, notes, userId]);
   }
   catch(exec){
     result = {"status":"FAILED", "msg":exec};
@@ -27,12 +29,14 @@ function addExpense(e) {
   try{
     const dateTime = e.parameter.dateTime;
     const transactionsId = e.parameter.transactionsId;
-    const productsName = e.parameter.productsName;
-    const qtyProducts = e.parameter.qtyProducts;
-    const expenseAmounts = e.parameter.expenseAmounts;
+    const expenseName = e.parameter.expenseName;
+    const qtyProducts = parseInt(e.parameter.qtyProducts);
+    const expenseAmounts = parseFloat(e.parameter.expenseAmounts);
+    const totalAmounts = qtyProducts * expenseAmounts;
+    const notes = e.parameter.notes
     const userId = e.parameter.userId;
     
-    data = sheet.appendRow([dateTime, transactionsId, productsName, qtyProducts, expenseAmounts, userId]);
+    data = sheet.appendRow([dateTime, transactionsId, expenseName, qtyProducts, expenseAmounts, totalAmounts, notes, userId]);
   }
   catch(exec){
     result = {"status":"FAILED", "msg":exec};
@@ -102,6 +106,10 @@ function doGet(e) {
       return getProducts();
     case 'getServices':
       return getServices();
+    case 'getExpenseTypes':
+      return getExpenseTypes();
+    case 'getIncomeTypes':
+      return getIncomeTypes();
     default:
       return ContentService.createTextOutput("Invalid action");
   }
@@ -141,6 +149,22 @@ function getServices() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Services');
   const data = sheet.getDataRange().getValues();
   return createResponse(data);
+}
+
+function getExpenseTypes(){
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ExpenseTypes');
+  const data = sheet.getDataRange().getValues();
+
+  const expenseNames = data.map(row => row[0]);
+  return createResponse(expenseNames);
+}
+
+function getIncomeTypes(){
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products');
+  const data = sheet.getDataRange().getValues();
+
+  const productsName = data.map(row => row[2]);
+  return createResponse(productsName);
 }
 
 function createResponse(data) {
