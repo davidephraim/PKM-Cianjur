@@ -5,6 +5,24 @@ void main() {
   runApp(ExpenseMonitoringApp());
 }
 
+class MainPage extends StatelessWidget {
+  final String userId;
+
+  MainPage({required this.userId});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Main Page'),
+      ),
+      body: Center(
+        child: Text('Welcome, User ID: $userId'),
+      ),
+    );
+  }
+}
+
 class ExpenseMonitoringApp extends StatefulWidget {
   @override
   _ExpenseMonitoringAppState createState() => _ExpenseMonitoringAppState();

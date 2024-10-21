@@ -11,11 +11,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   final _formKey = GlobalKey<FormState>();
   String userId = '';
-  String userName = '';
-  String userPassword = '';
-  String userProduct = '';
-  String userService = '';
-  String userContact = '';
+  String userPasswd = '';
+  String phoneNumber = '';
 
   @override
   Widget build(BuildContext context) {
@@ -32,67 +29,52 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 onSaved: (value) => userId = value!,
                 validator: (value) => value!.isEmpty ? 'Please enter User ID' : null,
               ),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Username'),
-                onSaved: (value) => userName = value!,
-                validator: (value) => value!.isEmpty ? 'Please enter Username' : null,
-              ),
+              
               TextFormField(
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
-                onSaved: (value) => userPassword = value!,
+                onSaved: (value) => userPasswd = value!,
                 validator: (value) => value!.isEmpty ? 'Please enter Password' : null,
               ),
+              
               TextFormField(
-                decoration: InputDecoration(labelText: 'Product'),
-                onSaved: (value) => userProduct = value!,
+                decoration: InputDecoration(labelText: 'Phone Number'),
+                onSaved: (value) => phoneNumber = value!,
+                validator: (value) => value!.isEmpty ? 'Please enter Phone Number' : null,
               ),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Service'),
-                onSaved: (value) => userService = value!,
-              ),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Contact'),
-                onSaved: (value) => userContact = value!,
-                validator: (value) => value!.isEmpty ? 'Please enter Contact' : null,
-              ),
+
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
+                    
                     try {
-                      // Call the registerUser method
                       Map<String, dynamic> response = await apiService.registerUser(
                         userId,
-                        userName,
-                        userPassword,
-                        userProduct,
-                        userService,
-                        userContact,
+                        userPasswd,
+                        phoneNumber
                       );
 
                       // Handle response
                       if (response['success'] != null && response['success']) {
-                        // Show a success message and navigate back
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Registration successful!')),
                         );
                         Navigator.pop(context); // Navigate back after registration
                       } else {
-                        // Show an error message
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Registration failed: ${response['message']}')),
                         );
                       }
                     } catch (e) {
-                      // Handle any errors
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: $e')),
                       );
                     }
                   }
                 },
+
                 child: Text('Register'),
               ),
             ],

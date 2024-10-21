@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:expense_monitoring_v1/api_service.dart';
+import 'package:expense_monitoring_v1/main.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -9,8 +10,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final ApiService apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
-  String userName = '';
-  String userPassword = '';
+  String userId = '';
+  String userPasswd = '';
 
   @override
   Widget build(BuildContext context) {
@@ -23,14 +24,14 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Username'),
-                onSaved: (value) => userName = value!,
-                validator: (value) => value!.isEmpty ? 'Please enter Username' : null,
+                decoration: InputDecoration(labelText: 'User Id'),
+                onSaved: (value) => userId = value!,
+                validator: (value) => value!.isEmpty ? 'Please enter User Id' : null,
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
-                onSaved: (value) => userPassword = value!,
+                onSaved: (value) => userPasswd = value!,
                 validator: (value) => value!.isEmpty ? 'Please enter Password' : null,
               ),
               SizedBox(height: 20),
@@ -39,8 +40,7 @@ class _LoginPageState extends State<LoginPage> {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
                     try {
-                      // Call the login method from ApiService
-                      final response = await apiService.loginUser(userName, userPassword);
+                      final response = await apiService.loginUser(userId, userPasswd);
                       
                       // Handle response
                       if (response['success'] != null && response['success']) {
@@ -48,15 +48,19 @@ class _LoginPageState extends State<LoginPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Login successful!')),
                         );
-                        // TODO: Navigate to main app screen
+                        // Sent to Main.dart
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MainPage(userId: userId),
+                          ),
+                        );
                       } else {
-                        // Show error message
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Login failed: ${response['message']}')),
                         );
                       }
                     } catch (e) {
-                      // Handle any errors
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: $e')),
                       );
