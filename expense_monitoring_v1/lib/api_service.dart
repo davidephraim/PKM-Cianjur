@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbz64gSc8TUky6CRiv6KRo629JQm-JFRwkxLqISxSrzo7S4aVS3n5ONPBRBbT9930cfFRQ/exec';
+  static const String baseUrl = 'https://script.google.com/macros/s/AKfycbwNMueWPZc0F0WJpa_x1oaUgA0LP4KMNdxrMkbfxpOIqfFn1IUVdX8gAazZx51cASQnTw/exec';
   
   static const String getIncomeAction = 'getIncome';
   static const String getExpenseAction = 'getExpense';
@@ -17,6 +17,7 @@ class ApiService {
   static const String updateIncomeQuantityAction = 'updateIncomeQuantity';
   static const String getExpenseTypesAction = 'getExpenseTypes';
   static const String getIncomeTypesAction = 'getIncomeTypes';
+  static const String loginUserAction = 'loginUser';
 
   Future<List<dynamic>> fetchIncome() async {
     final response = await http.get(Uri.parse('$baseUrl?action=$getIncomeAction'));
@@ -58,34 +59,35 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> loginUser(String userName, String userPassword) async {
-    final response = await http.get(Uri.parse('$baseUrl?action=$getUsersAction'));
+// Login User [START]
+  Future<Map<String, dynamic>> loginUser(String userId, String userPasswd) async {
+    final response = await http.get(Uri.parse('$baseUrl?action=$loginUserAction'));
     List<dynamic> users = _handleResponse(response);
 
     for (var user in users) {
-      if (user[1] == userName && user[2] == userPassword) {
+      if (user[1] == userId && user[2] == userPasswd) {
         return {'success': true, 'message': 'Login successful', 'userId': user[0]};
       }
     }
     return {'success': false, 'message': 'Invalid username or password'};
   }
+// Login User [END]
 
-  Future<Map<String, dynamic>> registerUser(String userId, String userName, String userPassword, String userProduct, String userService, String userContact) async {
+// Register User [START]
+  Future<Map<String, dynamic>> registerUser(String userName, String userPasswd, String phoneNumber) async {
       final uri = Uri.parse(baseUrl).replace(queryParameters: {'action': registerUserAction});
       final response = await http.post(
         uri,
         body: jsonEncode({
-          'userId': userId,
           'userName': userName,
-          'userPassword': userPassword,
-          'userProduct': userProduct,
-          'userService': userService,
-          'userContact': userContact,
+          'userPasswd': userPasswd,
+          'phoneNumber': phoneNumber
         }),
         headers: {'Content-Type': 'application/json'},
       );
       return _handleResponse(response);
   }
+// Register User [END]
 
 // ADD INCOME [START]
     Future<void> addIncome({

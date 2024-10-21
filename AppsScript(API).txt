@@ -1,3 +1,75 @@
+function registerUser(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  var result = { "status": "SUCCESS" };
+
+  try {
+    const userName = e.parameter.userName;
+    const userPasswd = e.parameter.userPasswd;
+    const phoneNumber = e.parameter.phoneNumber;
+
+    const hashedPasswd = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, userPasswd)
+      .map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0'))
+      .join('');
+
+    const data = sheet.getDataRange().getValues();
+    
+    let userId, userProduct, userService;
+    let idSuffix = 1;
+    
+    do {
+      userId = userName + idSuffix;
+      userProduct = 'P' + userName + (idSuffix + 1);
+      userService = 'S' + userName + (idSuffix + 2);
+      ++idSuffix;
+    } while (data.some(row => row[0] === userId || row[3] === userProduct || row[4] === userService));
+
+    sheet.appendRow([userId, userName, hashedPasswd, userProduct, userService, phoneNumber]);
+
+  } catch (exec) {
+    result = { "status": "FAILED", "msg": exec.toString() };
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function loginUser(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  var result = { "status": "FAILED", "msg": "Invalid User Id or Password" };
+
+  try {
+    const userId = e.parameter.userId;
+    const passwd = e.parameter.passwd;
+
+    const hashedPasswd = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, passwd)
+      .map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0'))
+      .join('');
+
+    const data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; ++i) {
+      if (data[i][0] === userId && data[i][2] === hashedPasswd) {
+        result = {
+          "status": "SUCCESS",
+          "userId": userId,
+          "userName": data[i][1],
+          "phoneNumber": data[i][5],
+          "userProduct": data[i][3],
+          "userService": data[i][4]
+        };
+        break;
+      }
+    }
+  } catch (exec) {
+    result = {"status": "FAILED", "msg": exec.toString()};
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function addIncome(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Income');
   var result = {"status":"SUCCESS"};
@@ -77,6 +149,8 @@ function doPost(e) {
   switch(action) {
     case 'registerUser':
       return registerUser(e);
+    case 'loginUser':
+      return loginUser(e);
     case 'addIncome':
       return addIncome(e);
     case 'addExpense':
